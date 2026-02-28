@@ -66,6 +66,7 @@ class handler(BaseHTTPRequestHandler):
 
         # AI MODE — try Gemini, fallback to templates
         used_mode = "ai"
+        debug_err = None
         try:
             posts = generate_with_gemini(
                 business_name, business_type, target_audience,
@@ -76,8 +77,9 @@ class handler(BaseHTTPRequestHandler):
                 business_name, business_type, platforms, tone, language, num_posts
             )
             used_mode = "template"
+            debug_err = str(exc)
 
-        self._send_json(200, {"posts": posts, "mode": used_mode, "debug_error": str(exc) if used_mode == "template" else None})
+        self._send_json(200, {"posts": posts, "mode": used_mode, "debug_error": debug_err})
 
     def _send_json(self, status_code, data):
         body = json.dumps(data, ensure_ascii=False).encode('utf-8')
