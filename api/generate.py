@@ -15,11 +15,9 @@ import time
 from http.server import BaseHTTPRequestHandler
 
 # ===== CONFIG =====
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL = "gemini-2.0-flash"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
-
-def get_gemini_key():
-    return os.environ.get("GEMINI_API_KEY", "")
 
 
 class handler(BaseHTTPRequestHandler):
@@ -32,9 +30,8 @@ class handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        # Stats/diagnostic endpoint
-        key = get_gemini_key()
-        result = {"total_generations": 0, "today": 0, "gemini_key_set": len(key) > 0, "key_prefix": key[:8] + "..." if len(key) > 8 else "EMPTY"}
+        # Stats endpoint — returns static data (stateless serverless)
+        result = {"total_generations": 0, "today": 0}
         body = json.dumps(result).encode('utf-8')
         self.send_response(200)
         self.send_header('Content-Type', 'application/json')
@@ -74,13 +71,13 @@ class handler(BaseHTTPRequestHandler):
                 business_name, business_type, target_audience,
                 platforms, tone, language, num_posts
             )
-        except Exception:
+        except Exception as exc:
             posts = generate_with_templates(
                 business_name, business_type, platforms, tone, language, num_posts
             )
             used_mode = "template"
 
-        self._send_json(200, {"posts": posts, "mode": used_mode})
+        self._send_json(200, {"posts": posts, "mode": used_mode, "debug_error": str(exc) if used_mode == "template" else None})
 
     def _send_json(self, status_code, data):
         body = json.dumps(data, ensure_ascii=False).encode('utf-8')
@@ -161,7 +158,7 @@ Generate exactly {num_posts} posts, days 1 through {num_posts}."""
         }
     }
 
-    url = f"{GEMINI_API_URL}?key={get_gemini_key()}"
+    url = f"{GEMINI_API_URL}?key={GEMINI_API_KEY}"
     req = urllib.request.Request(
         url,
         data=json.dumps(request_body).encode("utf-8"),
@@ -238,7 +235,7 @@ def generate_with_templates(name, btype, platforms, tone, language, num_posts):
         "ثقة عملائنا هي أكبر إنجازاتنا. شكراً لكل من اختار {name} — نعدكم بالأفضل دائماً.",
         "هل تبحثون عن الجودة والاحترافية؟ {name} وجهتكم الأولى. زورونا وشوفوا بأنفسكم.",
         "مع {name}، كل يوم هو فرصة جديدة للتميز. انضموا لعائلتنا المتنامية واستمتعوا بالفرق.",
-        "نفخر في {name} بتقديم خدمات تتجاوز توقعاتكم. جربونا وشاركونا رأيكم."
+        "نفخر في {name} بتقديم خدمات تتجاوز توقعاتكم. جربونا وشاركونا رأيكم.",
     ]
     en_templates = [
         "At {name}, we believe excellence isn't optional — it's a way of life. We bring you the best services in our field.",
@@ -248,7 +245,7 @@ def generate_with_templates(name, btype, platforms, tone, language, num_posts):
         "Our clients' trust is our greatest achievement. Thank you for choosing {name} — we promise the best, always.",
         "Looking for quality and professionalism? {name} is your go-to destination. Visit us and see for yourself.",
         "With {name}, every day is a new opportunity to excel. Join our growing family and experience the difference.",
-        "At {name}, we pride ourselves on exceeding expectations. Try us and share your experience."
+        "At {name}, we pride ourselves on exceeding expectations. Try us and share your experience.",
     ]
     ar_tags = ["#السعودية", "#الرياض", "#جدة", "#رؤية_2030", "#اعمال", "#ريادة_اعمال", "#نجاح", "#تميز", "#خدمات", "#جودة"]
     en_tags = ["#SaudiArabia", "#Riyadh", "#Jeddah", "#Vision2030", "#Business", "#Entrepreneurship", "#Success", "#Quality", "#Services", "#Growth"]
