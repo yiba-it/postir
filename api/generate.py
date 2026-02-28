@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 """
-Postir — AI Social Media Content Generator Backend
+Postir V2 — AI Social Media Content Generator Backend
 Uses Google Gemini API to generate social media posts.
 Falls back to templates if API fails.
 Vercel serverless function (BaseHTTPRequestHandler format).
+
+V2 Changes:
+- Auth required: validates Bearer token via Supabase
+- Token system: checks tokens_used < tokens_total before generating
+- Token deduction: increments tokens_used after successful generation
+- Generation logging: records each generation in the generations table
+- Demo mode: only for authenticated free users with remaining tokens
 """
 import json
 import os
@@ -13,6 +20,13 @@ import urllib.error
 import hashlib
 import time
 from http.server import BaseHTTPRequestHandler
+
+from _supabase import (
+    verify_token,
+    check_tokens,
+    update_user_tokens,
+    log_generation,
+)
 
 # ===== CONFIG =====
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
@@ -26,21 +40,42 @@ class handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         self.end_headers()
 
     def do_GET(self):
-        # Stats endpoint — returns static data (stateless serverless)
+        # Stats endpoint — returns user-specific stats if authenticated
+        token = self._get_bearer_token()
+        if token:
+            user = verify_token(token)
+            if user:
+                from _supabase import get_user_profile
+                profile = get_user_profile(user["id"]) or {}
+                result = {
+                    "tokens_remaining": max(0, profile.get("tokens_total", 3) - profile.get("tokens_used", 0)),
+                    "plan": profile.get("plan", "free"),
+                }
+                self._send_json(200, result)
+                return
+        # Unauthenticated fallback
         result = {"total_generations": 0, "today": 0}
-        body = json.dumps(result).encode('utf-8')
-        self.send_response(200)
-        self.send_header('Content-Type', 'application/json')
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Content-Length', str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
+        self._send_json(200, result)
 
     def do_POST(self):
+        # ── Auth check ──────────────────────────────────────────
+        token = self._get_bearer_token()
+        if not token:
+            self._send_json(401, {"error": "Authentication required. Please log in."})
+            return
+
+        user = verify_token(token)
+        if not user:
+            self._send_json(401, {"error": "Invalid or expired token. Please log in again."})
+            return
+
+        user_id = user["id"]
+
+        # ── Parse request body ──────────────────────────────────
         try:
             content_length = int(self.headers.get('Content-Length', 0))
             body_raw = self.rfile.read(content_length) if content_length > 0 else b'{}'
@@ -56,17 +91,33 @@ class handler(BaseHTTPRequestHandler):
         tone = body.get("tone", "friendly")
         language = body.get("language", "both")
         num_posts = min(max(int(body.get("num_posts", 7)), 1), 30)
-        mode = body.get("mode", "demo")
+        mode = body.get("mode", "ai")
 
-        # DEMO MODE
+        # ── Token check ─────────────────────────────────────────
+        has_tokens, profile = check_tokens(user_id, required=1)
+
+        if not has_tokens:
+            plan = profile.get("plan", "free") if profile else "free"
+            self._send_json(402, {
+                "error": "You've used all your tokens. Upgrade your plan to continue.",
+                "plan": plan,
+                "tokens_used": profile.get("tokens_used", 0) if profile else 0,
+                "tokens_total": profile.get("tokens_total", 0) if profile else 0,
+                "upgrade_required": True,
+            })
+            return
+
+        # ── DEMO MODE — for users who explicitly request it ─────
         if mode == "demo":
             posts = get_demo_posts(business_name, language, platforms)
             self._send_json(200, {"posts": posts, "mode": "demo"})
             return
 
-        # AI MODE — try Gemini, fallback to templates
+        # ── AI MODE — try Gemini, fallback to templates ─────────
         used_mode = "ai"
         debug_err = None
+        posts = []
+
         try:
             posts = generate_with_gemini(
                 business_name, business_type, target_audience,
@@ -79,17 +130,41 @@ class handler(BaseHTTPRequestHandler):
             used_mode = "template"
             debug_err = str(exc)
 
-        self._send_json(200, {"posts": posts, "mode": used_mode, "debug_error": debug_err})
+        # ── Deduct 1 token ──────────────────────────────────────
+        update_user_tokens(user_id, 1)
+
+        # ── Log generation ──────────────────────────────────────
+        platform_str = platforms[0] if platforms else "instagram"
+        prompt_summary = f"{business_name} | {business_type} | {num_posts} posts"
+        log_generation(user_id, "text", platform_str, prompt_summary, tokens_consumed=1)
+
+        self._send_json(200, {
+            "posts": posts,
+            "mode": used_mode,
+            "debug_error": debug_err,
+            "tokens_remaining": max(0, (profile.get("tokens_total", 3) - profile.get("tokens_used", 0)) - 1),
+        })
+
+    def _get_bearer_token(self):
+        auth = self.headers.get("Authorization", "")
+        if auth.startswith("Bearer "):
+            return auth[7:].strip()
+        return None
 
     def _send_json(self, status_code, data):
         body = json.dumps(data, ensure_ascii=False).encode('utf-8')
         self.send_response(status_code)
         self.send_header('Content-Type', 'application/json')
         self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
 
+
+# ══════════════════════════════════════════════════════════════════════
+#  Gemini generation (unchanged from V1)
+# ══════════════════════════════════════════════════════════════════════
 
 def generate_with_gemini(name, btype, audience, platforms, tone, language, num_posts):
     """Generate posts using Google Gemini API."""
