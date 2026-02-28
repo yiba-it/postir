@@ -5,6 +5,7 @@ Creates PaymentIntents and returns checkout data for the Airwallex Hosted Paymen
 Vercel serverless function (BaseHTTPRequestHandler format).
 """
 import json
+import os
 import urllib.request
 import urllib.error
 import uuid
@@ -13,8 +14,8 @@ from http.server import BaseHTTPRequestHandler
 
 # ===== AIRWALLEX CONFIG =====
 AIRWALLEX_BASE_URL = "https://api.airwallex.com"
-AIRWALLEX_CLIENT_ID = "VdkldjCkQJqz4P7-pCQ85g"
-AIRWALLEX_API_KEY = "32ec09e0cc3dee7e7994e09152785ce3db74404d7053d0523c3af042ff9a1ba3df6ebea5d9a226d761990b6da1b448ed"
+AIRWALLEX_CLIENT_ID = os.environ.get("AIRWALLEX_CLIENT_ID", "")
+AIRWALLEX_API_KEY = os.environ.get("AIRWALLEX_API_KEY", "")
 
 # Cache token in memory (expires after ~30 min)
 _token_cache = {"token": None, "expires_at": 0}

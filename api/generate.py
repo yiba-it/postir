@@ -6,6 +6,7 @@ Falls back to templates if API fails.
 Vercel serverless function (BaseHTTPRequestHandler format).
 """
 import json
+import os
 import random
 import urllib.request
 import urllib.error
@@ -14,7 +15,7 @@ import time
 from http.server import BaseHTTPRequestHandler
 
 # ===== CONFIG =====
-GEMINI_API_KEY = "AIzaSyAUDv0hwS8Udq85mr7a-wSalTWyF_bQajI"
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL = "gemini-2.0-flash"
 GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
