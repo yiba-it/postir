@@ -40,6 +40,25 @@
       </nav>
 
       <div class="header-actions">
+        <!-- Auth Buttons: logged out state -->
+        <div id="authBtnsLoggedOut">
+          <button class="btn btn-ghost btn-sm auth-open-btn" id="headerLoginBtn" data-i18n="header_login">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <span data-i18n="header_login">سجّل دخول</span>
+          </button>
+        </div>
+        <!-- Auth Buttons: logged in state -->
+        <div id="authBtnsLoggedIn" class="auth-logged-in hidden">
+          <span class="user-email-display" id="userEmailDisplay"></span>
+          <span class="token-badge" id="headerTokenBadge">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span id="headerTokenCount">0</span>
+          </span>
+          <button class="btn btn-ghost btn-sm" id="logoutBtn" data-i18n="header_logout">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span data-i18n="header_logout">خروج</span>
+          </button>
+        </div>
         <button class="lang-toggle" id="langToggle" aria-label="Toggle Language">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/>
@@ -139,7 +158,7 @@
     <div class="hero-trust-bar" id="heroTrustBar">
       <div class="trust-item">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span data-i18n="trust_no_signup">بدون تسجيل أو بطاقة ائتمان</span>
+        <span data-i18n="trust_signup">سجّل مجاناً واحصل على 3 رموز</span>
       </div>
       <div class="trust-divider"></div>
       <div class="trust-item">
@@ -241,6 +260,31 @@
       <span class="section-tag" data-i18n="gen_tag">المولّد</span>
       <h2 class="section-title" data-i18n="gen_title">اصنع محتواك الآن</h2>
       <p class="section-desc" data-i18n="gen_desc">أدخل بيانات نشاطك وخلّ الذكاء الاصطناعي يسوي الباقي</p>
+    </div>
+
+    <!-- Token Indicator (logged in) -->
+    <div class="token-indicator hidden" id="tokenIndicator">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span id="tokenIndicatorText">3 رموز متبقية</span>
+    </div>
+
+    <!-- Content Type Tabs -->
+    <div class="gen-tabs" id="genTabs">
+      <button class="gen-tab active" data-tab="text" id="tabText">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span data-i18n="tab_text">بوست نصي</span>
+        <span class="tab-cost">1 رمز</span>
+      </button>
+      <button class="gen-tab" data-tab="image" id="tabImage">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        <span data-i18n="tab_image">صورة</span>
+        <span class="tab-cost">1 رمز</span>
+      </button>
+      <button class="gen-tab" data-tab="video" id="tabVideo">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        <span data-i18n="tab_video">ريل فيديو</span>
+        <span class="tab-cost tab-cost-high">3 رموز</span>
+      </button>
     </div>
 
     <div class="generator-card">
@@ -357,6 +401,131 @@
         </button>
       </form>
 
+      <!-- ===== IMAGE FORM ===== -->
+      <form id="imageForm" class="gen-form hidden">
+        <div class="form-group">
+          <label for="imgPrompt" data-i18n="img_prompt_label">وصف الصورة المطلوبة</label>
+          <textarea id="imgPrompt" class="form-input form-textarea" data-i18n-placeholder="img_prompt_placeholder" placeholder="مثال: صورة احترافية لمطعم عائلي في جو رمضاني دافئ" rows="3" required></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="imgPlatform" data-i18n="img_platform_label">المنصة</label>
+            <div class="select-wrapper">
+              <select id="imgPlatform" class="form-input form-select">
+                <option value="instagram">Instagram</option>
+                <option value="x">X (Twitter)</option>
+                <option value="snapchat">Snapchat</option>
+                <option value="tiktok">TikTok</option>
+              </select>
+              <svg class="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="imgStyle" data-i18n="img_style_label">أسلوب التصميم</label>
+            <div class="select-wrapper">
+              <select id="imgStyle" class="form-input form-select">
+                <option value="realistic" data-i18n="img_style_realistic">واقعي</option>
+                <option value="illustration" data-i18n="img_style_illustration">رسوم توضيحية</option>
+                <option value="minimalist" data-i18n="img_style_minimalist">مينيمال</option>
+                <option value="luxury" data-i18n="img_style_luxury">فاخر</option>
+              </select>
+              <svg class="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="imgBusiness" data-i18n="form_name_label">اسم النشاط التجاري</label>
+            <input type="text" id="imgBusiness" class="form-input" data-i18n-placeholder="form_name_placeholder" placeholder="مثال: مطعم الديرة">
+          </div>
+          <div class="form-group">
+            <label for="imgLang" data-i18n="form_lang_label">لغة النص</label>
+            <div class="select-wrapper">
+              <select id="imgLang" class="form-input form-select">
+                <option value="ar" data-i18n="lang_ar">عربي فقط</option>
+                <option value="en" data-i18n="lang_en">إنجليزي فقط</option>
+                <option value="both" data-i18n="lang_both">عربي + إنجليزي</option>
+              </select>
+              <svg class="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-generate btn-glow" id="generateImageBtn">
+          <span data-i18n="img_generate">اصنع الصورة</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        </button>
+      </form>
+
+      <!-- ===== VIDEO FORM ===== -->
+      <form id="videoForm" class="gen-form hidden">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="vidBusiness" data-i18n="form_name_label">اسم النشاط التجاري</label>
+            <input type="text" id="vidBusiness" class="form-input" data-i18n-placeholder="form_name_placeholder" placeholder="مثال: مطعم الديرة" required>
+          </div>
+          <div class="form-group">
+            <label for="vidType" data-i18n="form_type_label">نوع النشاط</label>
+            <div class="select-wrapper">
+              <select id="vidType" class="form-input form-select">
+                <option value="restaurant" data-i18n="type_restaurant">مطعم / كافيه</option>
+                <option value="retail" data-i18n="type_retail">متجر / تجزئة</option>
+                <option value="salon" data-i18n="type_salon">صالون / تجميل</option>
+                <option value="realestate" data-i18n="type_realestate">عقارات</option>
+                <option value="tech" data-i18n="type_tech">تقنية / برمجيات</option>
+                <option value="other" data-i18n="type_other">أخرى</option>
+              </select>
+              <svg class="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="vidAudience" data-i18n="form_audience_label">الجمهور المستهدف</label>
+            <input type="text" id="vidAudience" class="form-input" data-i18n-placeholder="form_audience_placeholder" placeholder="مثال: عائلات سعودية في الرياض" required>
+          </div>
+          <div class="form-group">
+            <label for="vidPlatform" data-i18n="img_platform_label">المنصة</label>
+            <div class="select-wrapper">
+              <select id="vidPlatform" class="form-input form-select">
+                <option value="instagram">Instagram Reels</option>
+                <option value="tiktok">TikTok</option>
+                <option value="snapchat">Snapchat</option>
+              </select>
+              <svg class="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="vidTone" data-i18n="form_tone_label">نبرة المحتوى</label>
+            <div class="select-wrapper">
+              <select id="vidTone" class="form-input form-select">
+                <option value="friendly" data-i18n="tone_friendly">ودّي وقريب</option>
+                <option value="professional" data-i18n="tone_professional">احترافي ورسمي</option>
+                <option value="humorous" data-i18n="tone_humorous">فكاهي ومرح</option>
+                <option value="inspirational" data-i18n="tone_inspirational">ملهم وتحفيزي</option>
+              </select>
+              <svg class="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="vidLang" data-i18n="form_lang_label">لغة المحتوى</label>
+            <div class="select-wrapper">
+              <select id="vidLang" class="form-input form-select">
+                <option value="ar" data-i18n="lang_ar">عربي فقط</option>
+                <option value="en" data-i18n="lang_en">إنجليزي فقط</option>
+                <option value="both" data-i18n="lang_both">عربي + إنجليزي</option>
+              </select>
+              <svg class="select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-generate btn-glow" id="generateVideoBtn">
+          <span data-i18n="vid_generate">اصنع الريل</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        </button>
+      </form>
+
       <!-- Loading State -->
       <div class="gen-loading hidden" id="genLoading">
         <div class="loading-ring">
@@ -370,11 +539,14 @@
         <p class="loading-sub" data-i18n="loading_sub">يتم تحليل السوق وكتابة محتوى مخصص لنشاطك</p>
       </div>
 
-      <!-- Results -->
+      <!-- Results: Text Posts -->
       <div class="gen-results hidden" id="genResults">
         <div class="results-header">
           <h3 data-i18n="results_title">المحتوى جاهز!</h3>
-          <button class="btn btn-ghost btn-sm" id="newGenBtn" data-i18n="results_new">طلب جديد</button>
+          <div class="results-header-actions">
+            <span class="tokens-remaining-badge hidden" id="tokensRemainingBadge"></span>
+            <button class="btn btn-ghost btn-sm" id="newGenBtn" data-i18n="results_new">طلب جديد</button>
+          </div>
         </div>
         <div class="results-grid" id="resultsGrid">
           <!-- Filled dynamically -->
@@ -387,6 +559,34 @@
             <p data-i18n="upsell_desc">النسخة التجريبية تعطيك 3 بوستات. اشترك واحصل على محتوى شهر كامل بـ 10 ريال فقط.</p>
             <a href="#pricing" class="btn btn-secondary" data-i18n="upsell_cta">شوف الأسعار</a>
           </div>
+        </div>
+      </div>
+
+      <!-- Results: Image -->
+      <div class="gen-results hidden" id="imageResults">
+        <div class="results-header">
+          <h3 data-i18n="img_ready">الصورة جاهزة!</h3>
+          <div class="results-header-actions">
+            <span class="tokens-remaining-badge hidden" id="imgTokensBadge"></span>
+            <button class="btn btn-ghost btn-sm" id="newImageBtn" data-i18n="results_new">طلب جديد</button>
+          </div>
+        </div>
+        <div class="image-result-card" id="imageResultCard">
+          <!-- Filled dynamically -->
+        </div>
+      </div>
+
+      <!-- Results: Video -->
+      <div class="gen-results hidden" id="videoResults">
+        <div class="results-header">
+          <h3 data-i18n="vid_ready">الريل جاهز!</h3>
+          <div class="results-header-actions">
+            <span class="tokens-remaining-badge hidden" id="vidTokensBadge"></span>
+            <button class="btn btn-ghost btn-sm" id="newVideoBtn" data-i18n="results_new">طلب جديد</button>
+          </div>
+        </div>
+        <div class="video-slides-container" id="videoSlidesContainer">
+          <!-- Filled dynamically -->
         </div>
       </div>
     </div>
@@ -653,11 +853,11 @@
     </div>
 
     <div class="pricing-grid">
-      <!-- Free Demo -->
+      <!-- Free Plan -->
       <div class="price-card">
         <div class="price-card-header">
-          <h3 data-i18n="plan_free_name">تجربة مجانية</h3>
-          <p class="price-sub" data-i18n="plan_free_sub">جرّب قبل ما تشتري</p>
+          <h3 data-i18n="plan_free_name">مجاني</h3>
+          <p class="price-sub" data-i18n="plan_free_sub">ابدأ الحين بدون دفع</p>
         </div>
         <div class="price-amount">
           <span class="price-currency" data-i18n="price_sar">ر.س</span>
@@ -666,26 +866,26 @@
         <ul class="price-features">
           <li>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="plan_free_f1">3 بوستات تجريبية</span>
+            <span data-i18n="plan_free_f1">3 رموز (نص فقط)</span>
           </li>
           <li>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="plan_free_f2">منصتين</span>
+            <span data-i18n="plan_free_f2">كل المنصات</span>
           </li>
           <li>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="plan_free_f3">بدون تسجيل</span>
+            <span data-i18n="plan_free_f3">يتطلب تسجيل</span>
           </li>
         </ul>
-        <button class="btn btn-ghost btn-block" id="pricingDemoBtn" data-i18n="plan_free_cta">جرّب الحين</button>
+        <button class="btn btn-ghost btn-block pricing-plan-btn" id="pricingDemoBtn" data-plan="free" data-i18n="plan_free_cta">سجّل مجاناً</button>
       </div>
 
-      <!-- Pay Per Use (Popular) -->
+      <!-- Starter (Popular) -->
       <div class="price-card price-card-popular">
         <div class="popular-badge" data-i18n="popular_badge">الأكثر طلباً</div>
         <div class="price-card-header">
           <h3 data-i18n="plan_ppu_name">باقة البداية</h3>
-          <p class="price-sub" data-i18n="plan_ppu_sub">1 ريال فقط لكل بوست</p>
+          <p class="price-sub" data-i18n="plan_ppu_sub">نص + صور + ريلز</p>
         </div>
         <div class="price-amount">
           <span class="price-currency" data-i18n="price_sar">ر.س</span>
@@ -694,31 +894,31 @@
         <ul class="price-features">
           <li>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="plan_ppu_f1">10 بوستات</span>
+            <span data-i18n="plan_ppu_f1">10 رموز</span>
           </li>
           <li>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="plan_ppu_f2">كل المنصات</span>
+            <span data-i18n="plan_ppu_f2">نص + صور + ريلز</span>
           </li>
           <li>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="plan_ppu_f3">عربي + إنجليزي</span>
+            <span data-i18n="plan_ppu_f3">كل المنصات</span>
           </li>
           <li>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span data-i18n="plan_ppu_f4">هاشتاقات ذكية</span>
           </li>
         </ul>
-        <button class="btn btn-primary btn-block btn-glow" id="payPpuBtn" data-i18n="plan_ppu_cta">اشتري الحين</button>
+        <button class="btn btn-primary btn-block btn-glow pricing-plan-btn" id="payPpuBtn" data-plan="starter" data-i18n="plan_ppu_cta">اشتري الحين</button>
         <p class="price-note" data-i18n="plan_ppu_note">دفع لمرة واحدة - بدون اشتراك</p>
       </div>
 
-      <!-- Monthly Pro -->
+      <!-- Pro -->
       <div class="price-card price-card-pro">
         <div class="pro-badge" data-i18n="pro_badge">PRO</div>
         <div class="price-card-header">
           <h3 data-i18n="plan_pro_name">الباقة الشهرية</h3>
-          <p class="price-sub" data-i18n="plan_pro_sub">وفّر أكثر من 2,900 ريال شهرياً</p>
+          <p class="price-sub" data-i18n="plan_pro_sub">كل شيء بدون حدود</p>
         </div>
         <div class="price-amount">
           <span class="price-currency" data-i18n="price_sar">ر.س</span>
@@ -728,15 +928,15 @@
         <ul class="price-features">
           <li>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="plan_pro_f1">بوستات غير محدودة</span>
+            <span data-i18n="plan_pro_f1">رموز غير محدودة</span>
           </li>
           <li>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="plan_pro_f2">كل المنصات</span>
+            <span data-i18n="plan_pro_f2">نص + صور + ريلز</span>
           </li>
           <li>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span data-i18n="plan_pro_f3">عربي + إنجليزي</span>
+            <span data-i18n="plan_pro_f3">كل المنصات</span>
           </li>
           <li>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -751,7 +951,7 @@
             <span data-i18n="plan_pro_f6">أولوية في التوليد</span>
           </li>
         </ul>
-        <button class="btn btn-secondary btn-block" id="payProBtn" data-i18n="plan_pro_cta">اشترك الحين</button>
+        <button class="btn btn-secondary btn-block pricing-plan-btn" id="payProBtn" data-plan="pro" data-i18n="plan_pro_cta">اشترك الحين</button>
         <p class="price-note" data-i18n="plan_pro_note">إلغاء في أي وقت</p>
       </div>
     </div>
@@ -825,6 +1025,128 @@
       </div>
     </div>
   </footer>
+
+  <!-- ========== AUTH MODAL ========== -->
+  <div class="modal-backdrop hidden" id="authModalBackdrop">
+    <div class="modal-box" id="authModal" role="dialog" aria-modal="true" aria-label="تسجيل الدخول">
+      <button class="modal-close" id="authModalClose" aria-label="إغلاق">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <!-- Tabs -->
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="tabLogin" data-modal-tab="login" data-i18n="modal_login">تسجيل الدخول</button>
+        <button class="modal-tab" id="tabSignup" data-modal-tab="signup" data-i18n="modal_signup">إنشاء حساب</button>
+      </div>
+
+      <!-- Login Panel -->
+      <div class="modal-panel" id="loginPanel">
+        <div class="modal-brand">
+          <svg viewBox="0 0 40 40" width="40" height="40" fill="none"><path d="M20 2C10.06 2 2 9.16 2 18c0 4.97 2.56 9.44 6.6 12.5L6 36l7.2-3.6C15 33.4 17.44 34 20 34c9.94 0 18-7.16 18-16S29.94 2 20 2z" fill="url(#mg1)" /><defs><linearGradient id="mg1" x1="2" y1="2" x2="38" y2="36" gradientUnits="userSpaceOnUse"><stop stop-color="#B9FF66"/><stop offset="1" stop-color="#FFB547"/></linearGradient></defs></svg>
+          <span data-i18n="modal_welcome">مرحباً بك في بوستر</span>
+        </div>
+        <form id="loginForm" class="modal-form">
+          <div class="form-group">
+            <label for="loginEmail" data-i18n="modal_email">البريد الإلكتروني</label>
+            <input type="email" id="loginEmail" class="form-input" data-i18n-placeholder="modal_email_ph" placeholder="you@example.com" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="loginPassword" data-i18n="modal_password">كلمة المرور</label>
+            <div class="password-wrap">
+              <input type="password" id="loginPassword" class="form-input" data-i18n-placeholder="modal_password_ph" placeholder="••••••••" required autocomplete="current-password" minlength="6">
+              <button type="button" class="password-toggle" id="loginPasswordToggle" aria-label="إظهار كلمة المرور">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="modal-error hidden" id="loginError"></div>
+          <button type="submit" class="btn btn-primary btn-block btn-glow" id="loginSubmitBtn">
+            <span data-i18n="modal_login_submit">دخول</span>
+          </button>
+        </form>
+        <p class="modal-switch">
+          <span data-i18n="modal_no_account">ما عندك حساب؟</span>
+          <button class="modal-switch-btn" data-modal-tab="signup" data-i18n="modal_create">أنشئ حساباً</button>
+        </p>
+      </div>
+
+      <!-- Signup Panel -->
+      <div class="modal-panel hidden" id="signupPanel">
+        <div class="modal-brand">
+          <svg viewBox="0 0 40 40" width="40" height="40" fill="none"><path d="M20 2C10.06 2 2 9.16 2 18c0 4.97 2.56 9.44 6.6 12.5L6 36l7.2-3.6C15 33.4 17.44 34 20 34c9.94 0 18-7.16 18-16S29.94 2 20 2z" fill="url(#mg2)" /><defs><linearGradient id="mg2" x1="2" y1="2" x2="38" y2="36" gradientUnits="userSpaceOnUse"><stop stop-color="#B9FF66"/><stop offset="1" stop-color="#FFB547"/></linearGradient></defs></svg>
+          <span data-i18n="modal_signup_welcome">أنشئ حسابك مجاناً</span>
+        </div>
+        <form id="signupForm" class="modal-form">
+          <div class="form-group">
+            <label for="signupEmail" data-i18n="modal_email">البريد الإلكتروني</label>
+            <input type="email" id="signupEmail" class="form-input" data-i18n-placeholder="modal_email_ph" placeholder="you@example.com" required autocomplete="email">
+          </div>
+          <div class="form-group">
+            <label for="signupPassword" data-i18n="modal_password">كلمة المرور</label>
+            <div class="password-wrap">
+              <input type="password" id="signupPassword" class="form-input" data-i18n-placeholder="modal_password_new_ph" placeholder="6 أحرف على الأقل" required autocomplete="new-password" minlength="6">
+              <button type="button" class="password-toggle" id="signupPasswordToggle" aria-label="إظهار كلمة المرور">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="modal-error hidden" id="signupError"></div>
+          <button type="submit" class="btn btn-primary btn-block btn-glow" id="signupSubmitBtn">
+            <span data-i18n="modal_signup_submit">إنشاء الحساب</span>
+          </button>
+        </form>
+        <div class="modal-free-note">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span data-i18n="modal_free_tokens">تحصل على 3 رموز مجانية عند التسجيل</span>
+        </div>
+        <p class="modal-switch">
+          <span data-i18n="modal_have_account">عندك حساب؟</span>
+          <button class="modal-switch-btn" data-modal-tab="login" data-i18n="modal_login_link">سجّل دخول</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== DASHBOARD BAR ========== -->
+  <div class="dashboard-bar hidden" id="dashboardBar">
+    <div class="dashboard-bar-inner">
+      <div class="dash-info">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="dash-plan-name" id="dashPlanName">مجاني</span>
+        <span class="dash-sep">|</span>
+        <span class="dash-token-info">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span id="dashTokenInfo">3 رموز</span>
+        </span>
+      </div>
+      <div class="dash-actions">
+        <button class="dash-action-btn" id="dashHistoryBtn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3h18"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M3 21h18"/></svg>
+          <span data-i18n="dash_history">السجل</span>
+        </button>
+        <button class="dash-close-btn" id="dashCloseBtn" aria-label="إغلاق">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== HISTORY MODAL ========== -->
+  <div class="modal-backdrop hidden" id="historyModalBackdrop">
+    <div class="modal-box modal-box-wide" id="historyModal">
+      <div class="modal-header">
+        <h3 data-i18n="dash_history">سجل الإنشاء</h3>
+        <button class="modal-close" id="historyModalClose">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="history-list" id="historyList">
+        <div class="history-loading" id="historyLoading">
+          <svg class="spin-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#B9FF66" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Mobile Nav Overlay -->
   <div class="mobile-nav-overlay hidden" id="mobileNavOverlay">
