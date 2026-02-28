@@ -1,15 +1,20 @@
 {
   "rewrites": [
-    { "source": "/api/generate", "destination": "/api/generate" },
-    { "source": "/api/payment", "destination": "/api/payment" }
+    { "source": "/api/auth/:path*", "destination": "/api/auth.py" },
+    { "source": "/api/auth",        "destination": "/api/auth.py" },
+    { "source": "/api/generate",    "destination": "/api/generate.py" },
+    { "source": "/api/image",       "destination": "/api/image.py" },
+    { "source": "/api/video",       "destination": "/api/video.py" },
+    { "source": "/api/usage",       "destination": "/api/usage.py" },
+    { "source": "/api/payment",     "destination": "/api/payment.py" }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Origin",  "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
       ]
     }
   ]
