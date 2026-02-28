@@ -1,0 +1,9 @@
+{
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "routes": [
+    { "src": "/api/generate", "dest": "/api/generate.py" },
+    { "src": "/api/payment",  "dest": "/api/payment.py"  },
+    { "src": "/(.*)",         "dest": "/public/$1"       }
+  ]
+}
