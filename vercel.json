@@ -1,9 +1,16 @@
 {
-  "buildCommand": "",
-  "outputDirectory": "public",
-  "routes": [
-    { "src": "/api/generate", "dest": "/api/generate.py" },
-    { "src": "/api/payment",  "dest": "/api/payment.py"  },
-    { "src": "/(.*)",         "dest": "/public/$1"       }
+  "rewrites": [
+    { "source": "/api/generate", "destination": "/api/generate" },
+    { "source": "/api/payment", "destination": "/api/payment" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+      ]
+    }
   ]
 }
