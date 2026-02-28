@@ -1,437 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Postir - AI Content Generator for Saudi Businesses</title>
-  <meta name="description" content="Generate professional social media content in Gulf Arabic dialect. Tailored for Saudi businesses.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css">
-</head>
-<body>
-
-  <!-- ========== HEADER ========== -->
-  <header class="site-header" id="siteHeader">
-    <div class="header-inner">
-      <a href="#" class="logo-link">
-        <svg class="logo-mark" viewBox="0 0 40 40" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 2C10.06 2 2 9.16 2 18c0 4.97 2.56 9.44 6.6 12.5L6 36l7.2-3.6C15 33.4 17.44 34 20 34c9.94 0 18-7.16 18-16S29.94 2 20 2z" fill="url(#logoGrad)" />
-          <path d="M16 14l8 0M16 18.5l6 0M16 23l4 0" stroke="#0B0F19" stroke-width="2.2" stroke-linecap="round"/>
-          <path d="M26 22l3.5 3.5" stroke="#0B0F19" stroke-width="2.2" stroke-linecap="round"/>
-          <circle cx="25" cy="21" r="1.2" fill="#0B0F19"/>
-          <defs>
-            <linearGradient id="logoGrad" x1="2" y1="2" x2="38" y2="36" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#B9FF66"/>
-              <stop offset="1" stop-color="#FFB547"/>
-            </linearGradient>
-          </defs>
-        </svg>
-        <span class="logo-text-ar">بوستر</span>
-        <span class="logo-text-en">Postir</span>
-     </a>
-      <nav class="header-nav" id="headerNav">
-        <a href="#features">المميزات</a>
-        <a href="#how-it-works">كيف يعمل</a>
-        <a href="#pricing">الأسعار</a>
-      </nav>
-      <div class="header-actions">
-        <a href="#pricing" class="btn btn-ghost">ابدأ مجاناً</a>
-        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
-          <span></span><span></span><span></span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- ========== HERO ========== -->
-  <section class="hero" id="hero">
-    <div class="hero-bg-glow"></div>
-    <div class="container">
-      <div class="hero-badge">
-        <span class="badge-dot"></span>
-        <span>مدعوم بالذكاء الاصطناعي · مخصص للسوق السعودي</span>
-      </div>
-      <h1 class="hero-title">
-        <span class="line-1">محتوى سوشيال ميديا</span>
-        <span class="line-2 gradient-text">احترافي بثواني</span>
-      </h1>
-      <p class="hero-sub">
-        اكتب وصف نشاطك التجاري واحصل على بوستات جاهزة للنشر بالعامية الخليجية —
-        مناسبة لإنستغرام، تويتر، تيك توك، وسناب.
-      </p>
-      <div class="hero-cta-group">
-        <a href="#generator" class="btn btn-primary btn-lg">
-          جرّب مجاناً الآن
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-        <a href="#how-it-works" class="btn btn-outline btn-lg">شاهد كيف يعمل</a>
-      </div>
-      <div class="hero-trust">
-        <div class="trust-item">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>بدون بطاقة ائتمانية</span>
-        </div>
-        <div class="trust-item">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>٥ بوستات مجانية</span>
-        </div>
-        <div class="trust-item">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          <span>جاهز للنشر فوراً</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== GENERATOR ========== -->
-  <section class="generator-section" id="generator">
-    <div class="container">
-      <div class="section-label">المولّد</div>
-      <h2 class="section-title">أنشئ محتواك الآن</h2>
-      <p class="section-sub">أدخل معلومات نشاطك وسيقوم الذكاء الاصطناعي بإنشاء المحتوى المناسب</p>
-
-      <div class="generator-layout">
-        <!-- Input Panel -->
-        <div class="gen-panel gen-input-panel">
-          <div class="gen-panel-header">
-            <span class="gen-panel-icon">✏️</span>
-            <span>معلومات نشاطك</span>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">وصف نشاطك التجاري <span class="req">*</span></label>
-            <textarea id="businessDesc" class="form-textarea" placeholder="مثال: مطعم برغر في الرياض، نقدم برغر حجم كبير بأسعار معقولة، جمهورنا شباب من ١٨-٣٠ سنة..." rows="4"></textarea>
-            <div class="char-counter"><span id="descCount">0</span>/500</div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">نوع المنشور</label>
-              <div class="select-wrapper">
-                <select id="postType" class="form-select">
-                  <option value="promotional">ترويجي 🎯</option>
-                  <option value="engagement">تفاعل 💬</option>
-                  <option value="educational">تثقيفي 📚</option>
-                  <option value="story">قصة نجاح ⭐</option>
-                  <option value="seasonal">موسمي 🌙</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">المنصة</label>
-              <div class="select-wrapper">
-                <select id="platform" class="form-select">
-                  <option value="instagram">إنستغرام 📸</option>
-                  <option value="twitter">تويتر/X 🐦</option>
-                  <option value="tiktok">تيك توك 🎵</option>
-                  <option value="snapchat">سناب شات 👻</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">الصوت / اللهجة</label>
-            <div class="tone-grid" id="toneGrid">
-              <button class="tone-btn active" data-tone="casual">ودّي 😊</button>
-              <button class="tone-btn" data-tone="professional">احترافي 💼</button>
-              <button class="tone-btn" data-tone="funny">مرح 😂</button>
-              <button class="tone-btn" data-tone="urgent">عاجل 🔥</button>
-              <button class="tone-btn" data-tone="inspiring">ملهم ✨</button>
-              <button class="tone-btn" data-tone="local">خليجي 🌴</button>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">هاشتاقات مخصصة (اختياري)</label>
-            <input type="text" id="customHashtags" class="form-input" placeholder="#الرياض #برغر (افصل بمسافة)">
-          </div>
-
-          <button class="btn btn-primary btn-full" id="generateBtn">
-            <span class="btn-text">🚀 أنشئ المحتوى</span>
-            <span class="btn-loading" style="display:none">⏳ جاري الإنشاء...</span>
-          </button>
-
-          <div class="free-counter" id="freeCounter">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span id="freeCounterText">لديك <strong>5</strong> استخدامات مجانية</span>
-          </div>
-        </div>
-
-        <!-- Output Panel -->
-        <div class="gen-panel gen-output-panel">
-          <div class="gen-panel-header">
-            <span class="gen-panel-icon">✨</span>
-            <span>المحتوى المُنشأ</span>
-            <div class="output-actions" id="outputActions" style="display:none">
-              <button class="icon-btn" id="copyBtn" title="نسخ">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-              </button>
-              <button class="icon-btn" id="regenerateBtn" title="إعادة الإنشاء">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-              </button>
-            </div>
-          </div>
-          <div class="output-body" id="outputBody">
-            <div class="output-placeholder" id="outputPlaceholder">
-              <div class="placeholder-icon">🤖</div>
-              <p>أدخل وصف نشاطك واضغط "أنشئ المحتوى" للحصول على بوستات احترافية جاهزة للنشر</p>
-            </div>
-            <div class="output-content" id="outputContent" style="display:none">
-              <div class="platform-badge" id="platformBadge"></div>
-              <div class="generated-text" id="generatedText"></div>
-              <div class="hashtags-section" id="hashtagsSection"></div>
-              <div class="emoji-section" id="emojiSection"></div>
-            </div>
-            <div class="output-loading" id="outputLoading" style="display:none">
-              <div class="loading-animation">
-                <div class="loading-dot"></div>
-                <div class="loading-dot"></div>
-                <div class="loading-dot"></div>
-              </div>
-              <p>الذكاء الاصطناعي يكتب محتواك...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== FEATURES ========== -->
-  <section class="features-section" id="features">
-    <div class="container">
-      <div class="section-label">المميزات</div>
-      <h2 class="section-title">كل ما تحتاجه لمحتوى قوي</h2>
-      <p class="section-sub">أدوات مصممة خصيصاً للأعمال السعودية والخليجية</p>
-      <div class="features-grid">
-        <div class="feature-card">
-          <div class="feature-icon">🗣️</div>
-          <h3>عامية خليجية أصيلة</h3>
-          <p>المحتوى مكتوب باللهجة الخليجية الحقيقية التي يتفاعل معها جمهورك، بعيداً عن الترجمة الحرفية الجافة.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">📱</div>
-          <h3>محسّن لكل منصة</h3>
-          <p>كل بوست مُصمَّم حسب خصائص المنصة — طول النص، عدد الهاشتاقات، والأسلوب المناسب.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">⚡</div>
-          <h3>نتائج فورية</h3>
-          <p>احصل على محتوى احترافي في ثوانٍ معدودة، لا ساعات من الكتابة والمراجعة.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🎯</div>
-          <h3>مخصص لنشاطك</h3>
-          <p>الذكاء الاصطناعي يفهم طبيعة عملك ويُنتج محتوى يعكس هويتك التجارية.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">🔄</div>
-          <h3>تنويع لا نهاية له</h3>
-          <p>أنشئ عشرات النسخ المختلفة لنفس المحتوى لتغذية جدولك بشكل منتظم.</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">💾</div>
-          <h3>حفظ وتصدير</h3>
-          <p>احفظ أفضل بوستاتك، وصدّرها مباشرة أو شاركها مع فريق إدارة الحسابات.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== HOW IT WORKS ========== -->
-  <section class="how-section" id="how-it-works">
-    <div class="container">
-      <div class="section-label">كيف يعمل</div>
-      <h2 class="section-title">٣ خطوات فقط</h2>
-      <p class="section-sub">من الفكرة إلى المحتوى الجاهز في أقل من دقيقة</p>
-      <div class="steps-layout">
-        <div class="step-card">
-          <div class="step-number">١</div>
-          <div class="step-content">
-            <h3>أخبرنا عن نشاطك</h3>
-            <p>اكتب وصفاً مختصراً لعملك، منتجاتك، وجمهورك المستهدف.</p>
-          </div>
-        </div>
-        <div class="step-connector"></div>
-        <div class="step-card">
-          <div class="step-number">٢</div>
-          <div class="step-content">
-            <h3>اختر النوع والمنصة</h3>
-            <p>حدد نوع المحتوى (ترويجي، تفاعل، تثقيف...) والمنصة المستهدفة.</p>
-          </div>
-        </div>
-        <div class="step-connector"></div>
-        <div class="step-card">
-          <div class="step-number">٣</div>
-          <div class="step-content">
-            <h3>انسخ وانشر</h3>
-            <p>احصل على بوستك الجاهز، انسخه مباشرة، وانشره على حساباتك.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== PRICING ========== -->
-  <section class="pricing-section" id="pricing">
-    <div class="container">
-      <div class="section-label">الأسعار</div>
-      <h2 class="section-title">سعر واضح، بدون مفاجآت</h2>
-      <p class="section-sub">ابدأ مجاناً، وادفع فقط عندما تحتاج المزيد</p>
-      <div class="pricing-grid">
-
-        <!-- Free Plan -->
-        <div class="pricing-card">
-          <div class="plan-name">مجاني</div>
-          <div class="plan-price">
-            <span class="price-amount">٠</span>
-            <span class="price-currency">ريال</span>
-          </div>
-          <div class="plan-period">للأبد</div>
-          <ul class="plan-features">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>٥ بوستات شهرياً</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>كل المنصات</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>كل اللهجات</li>
-            <li class="disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>تاريخ المحتوى</li>
-            <li class="disabled"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>إنشاء متعدد</li>
-          </ul>
-          <button class="btn btn-outline btn-full plan-btn" data-plan="free">ابدأ مجاناً</button>
-        </div>
-
-        <!-- Pro Plan -->
-        <div class="pricing-card featured">
-          <div class="plan-badge">الأكثر طلباً</div>
-          <div class="plan-name">برو</div>
-          <div class="plan-price">
-            <span class="price-amount">٤٩</span>
-            <span class="price-currency">ريال</span>
-          </div>
-          <div class="plan-period">شهرياً</div>
-          <ul class="plan-features">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>١٠٠ بوست شهرياً</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>كل المنصات</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>كل اللهجات</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>تاريخ المحتوى</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>إنشاء متعدد</li>
-          </ul>
-          <button class="btn btn-primary btn-full plan-btn" data-plan="pro" data-price="49">اشترك الآن</button>
-        </div>
-
-        <!-- Business Plan -->
-        <div class="pricing-card">
-          <div class="plan-name">بزنس</div>
-          <div class="plan-price">
-            <span class="price-amount">١٤٩</span>
-            <span class="price-currency">ريال</span>
-          </div>
-          <div class="plan-period">شهرياً</div>
-          <ul class="plan-features">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>غير محدود</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>كل المنصات</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>كل اللهجات</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>تاريخ المحتوى</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>إنشاء متعدد</li>
-          </ul>
-          <button class="btn btn-outline btn-full plan-btn" data-plan="business" data-price="149">اشترك الآن</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== FOOTER ========== -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-brand">
-          <a href="#" class="logo-link">
-            <svg class="logo-mark" viewBox="0 0 40 40" width="32" height="32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M20 2C10.06 2 2 9.16 2 18c0 4.97 2.56 9.44 6.6 12.5L6 36l7.2-3.6C15 33.4 17.44 34 20 34c9.94 0 18-7.16 18-16S29.94 2 20 2z" fill="url(#logoGrad2)" />
-              <path d="M16 14l8 0M16 18.5l6 0M16 23l4 0" stroke="#0B0F19" stroke-width="2.2" stroke-linecap="round"/>
-              <defs>
-                <linearGradient id="logoGrad2" x1="2" y1="2" x2="38" y2="36" gradientUnits="userSpaceOnUse">
-                  <stop stop-color="#B9FF66"/>
-                  <stop offset="1" stop-color="#FFB547"/>
-                </linearGradient>
-              </defs>
-            </svg>
-            <span class="logo-text-ar">بوستر</span>
-            <span class="logo-text-en">Postir</span>
-          </a>
-          <p class="footer-tagline">محتوى سوشيال ميديا احترافي للأعمال السعودية</p>
-        </div>
-        <div class="footer-links">
-          <div class="footer-col">
-            <h4>المنتج</h4>
-            <a href="#features">المميزات</a>
-            <a href="#pricing">الأسعار</a>
-            <a href="#how-it-works">كيف يعمل</a>
-          </div>
-          <div class="footer-col">
-            <h4>الدعم</h4>
-            <a href="#">الأسئلة الشائعة</a>
-            <a href="#">تواصل معنا</a>
-            <a href="#">سياسة الخصوصية</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>© 2025 Postir. جميع الحقوق محفوظة.</p>
-      </div>
-    </div>
-  </footer>
-
-  <!-- ========== MODALS ========== -->
-  <!-- Upgrade Modal -->
-  <div class="modal-overlay" id="upgradeModal">
-    <div class="modal">
-      <button class="modal-close" id="closeUpgradeModal">✕</button>
-      <div class="modal-icon">⭐</div>
-      <h3 class="modal-title">ارقَ إلى برو</h3>
-      <p class="modal-body">استنفدت استخداماتك المجانية. اشترك في خطة برو للحصول على ١٠٠ بوست شهرياً.</p>
-      <button class="btn btn-primary btn-full" id="upgradeToProBtn" data-plan="pro" data-price="49">اشترك في برو — ٤٩ ريال/شهر</button>
-      <button class="btn btn-ghost btn-full" id="cancelUpgradeBtn">لاحقاً</button>
-    </div>
-  </div>
-
-  <!-- Payment Modal -->
-  <div class="modal-overlay" id="paymentModal">
-    <div class="modal modal-payment">
-      <button class="modal-close" id="closePaymentModal">✕</button>
-      <div class="modal-header">
-        <div class="modal-icon">💳</div>
-        <h3 class="modal-title">إتمام الاشتراك</h3>
-      </div>
-      <div class="payment-summary" id="paymentSummary"></div>
-      <div class="payment-form">
-        <div class="form-group">
-          <label class="form-label">البريد الإلكتروني</label>
-          <input type="email" id="payEmail" class="form-input" placeholder="example@email.com">
-        </div>
-        <div class="form-group">
-          <label class="form-label">الاسم الكامل</label>
-          <input type="text" id="payName" class="form-input" placeholder="محمد العتيبي">
-        </div>
-        <button class="btn btn-primary btn-full" id="confirmPayBtn">الدفع بـ Airwallex</button>
-        <div class="payment-security">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span>دفع آمن ومشفر</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Success Modal -->
-  <div class="modal-overlay" id="successModal">
-    <div class="modal">
-      <div class="modal-icon success-icon">✅</div>
-      <h3 class="modal-title">تم الاشتراك بنجاح!</h3>
-      <p class="modal-body" id="successModalBody">مرحباً بك في برو. تمتع الآن بـ ١٠٠ بوست شهرياً.</p>
-      <button class="btn btn-primary btn-full" id="closeSuccessModal">ابدأ الإنشاء</button>
-    </div>
-  </div>
-
-  <script src="./app.js"></script>
-</body>
-</html>
