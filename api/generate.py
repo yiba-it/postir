@@ -1,240 +1,262 @@
 #!/usr/bin/env python3
 """
 Postir — AI Social Media Content Generator Backend
-Uses OpenAI GPT-4o to generate Gulf Arabic social media posts.
-
-Deploy on Vercel as a Python serverless function.
+Uses Google Gemini API to generate social media posts.
+Falls back to templates if API fails.
+Vercel serverless function (BaseHTTPRequestHandler format).
 """
-
 import json
-import os
-import re
+import random
+import urllib.request
+import urllib.error
+import hashlib
+import time
 from http.server import BaseHTTPRequestHandler
 
-try:
-    import openai
-except ImportError:
-    openai = None
+# ===== CONFIG =====
+GEMINI_API_KEY = "AIzaSyAUDv0hwS8Udq85mr7a-wSalTWyF_bQajI"
+GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 
 
-# ---- PLATFORM CONFIG ----
-PLATFORM_CONFIG = {
-    "instagram": {
-        "name": "إنستغرام",
-        "max_chars": 2200,
-        "target_chars": 300,
-        "hashtag_count": 8,
-        "style": "نص جذاب مع فقرات قصيرة وسطر فارغ بين كل فقرة",
-    },
-    "twitter": {
-        "name": "تويتر/X",
-        "max_chars": 280,
-        "target_chars": 220,
-        "hashtag_count": 3,
-        "style": "نص مباشر وقصير جداً، جملة واحدة أو اثنتين كحد أقصى",
-    },
-    "tiktok": {
-        "name": "تيك توك",
-        "max_chars": 2200,
-        "target_chars": 200,
-        "hashtag_count": 6,
-        "style": "نص قصير ومثير وعصري، يستهدف الشباب",
-    },
-    "snapchat": {
-        "name": "سناب شات",
-        "max_chars": 250,
-        "target_chars": 150,
-        "hashtag_count": 2,
-        "style": "نص خفيف وسريع مناسب للقصص",
-    },
-}
-
-TONE_CONFIG = {
-    "casual":       "ودّي وغير رسمي، كأنك تتكلم مع صديق",
-    "professional": "احترافي ورسمي مع الحفاظ على الدفء",
-    "funny":        "مرح وفيه نكتة خفيفة مناسبة للموضوع",
-    "urgent":       "عاجل ومثير للفضول، يدفع للتفاعل الفوري",
-    "inspiring":    "ملهم ومحفز، يحرك المشاعر ويشجع الناس",
-    "local":        "خليجي أصيل بلهجة سعودية واضحة",
-}
-
-POST_TYPE_CONFIG = {
-    "promotional": "بوست ترويجي يسلط الضوء على منتج أو خدمة ويشجع الشراء أو الزيارة",
-    "engagement":  "بوست تفاعلي يطرح سؤالاً أو يدعو الجمهور للمشاركة والتعليق",
-    "educational": "بوست تثقيفي يشارك معلومة مفيدة أو نصيحة مرتبطة بالنشاط",
-    "story":       "قصة نجاح أو شهادة عميل حقيقية تبني الثقة",
-    "seasonal":    "بوست موسمي مرتبط بمناسبة أو موسم (رمضان، الصيف، الوطني...)",
-}
-
-
-# ---- PROMPT BUILDER ----
-def build_prompt(payload: dict) -> str:
-    platform = payload.get("platform", "instagram")
-    post_type = payload.get("postType", "promotional")
-    tone = payload.get("tone", "casual")
-    description = payload.get("description", "")
-    custom_hashtags = payload.get("hashtags", "")
-
-    p_cfg = PLATFORM_CONFIG.get(platform, PLATFORM_CONFIG["instagram"])
-    t_cfg = TONE_CONFIG.get(tone, TONE_CONFIG["casual"])
-    pt_cfg = POST_TYPE_CONFIG.get(post_type, POST_TYPE_CONFIG["promotional"])
-
-    custom_ht_instruction = ""
-    if custom_hashtags:
-        tags = [t.strip() for t in custom_hashtags.split() if t.strip()]
-        if tags:
-            custom_ht_instruction = f"\n- أضف هذه الهاشتاقات المخصصة بالتأكيد: {' '.join(tags)}"
-
-    prompt = f"""أنت خبير تسويق رقمي متخصص في السوق السعودي والخليجي.
-مهمتك: كتابة محتوى سوشيال ميديا احترافي باللهجة الخليجية السعودية.
-
-معلومات النشاط التجاري:
-{description}
-
-المنصة: {p_cfg['name']}
-نوع البوست: {pt_cfg}
-الأسلوب المطلوب: {t_cfg}
-الأسلوب للمنصة: {p_cfg['style']}
-الطول المستهدف للنص: حوالي {p_cfg['target_chars']} حرف (بدون الهاشتاقات)
-عدد الهاشتاقات: {p_cfg['hashtag_count']} هاشتاق{custom_ht_instruction}
-
-تعليمات مهمة:
-- اكتب باللهجة الخليجية/السعودية العامية (مو الفصحى)
-- لا تستخدم تعبيرات مصرية أو شامية
-- استخدم كلمات سعودية مثل: وايد، زين، حق، يبي، كشخة، صراحة، بصراحة...
-- الهاشتاقات تكون نصف عربية ونصف إنجليزية للوصول الأوسع
-- النتيجة يجب أن تكون JSON فقط بدون أي نص إضافي
-
-الصيغة المطلوبة للرد (JSON فقط):
-{{
-  "text": "نص البوست هنا",
-  "hashtags": ["#هاشتاق1", "#هاشتاق2", "#hashtag3"],
-  "emojis": ["🔥", "✨", "💪"]
-}}"""
-
-    return prompt
-
-
-# ---- MOCK GENERATOR (fallback when no API key) ----
-def generate_mock(payload: dict) -> dict:
-    platform = payload.get("platform", "instagram")
-    post_type = payload.get("postType", "promotional")
-    description = payload.get("description", "نشاط تجاري")
-    custom_hashtags = payload.get("hashtags", "")
-
-    # Extract first sentence of description
-    first_line = description.split(".")[0].split(",")[0][:60]
-
-    templates = {
-        "promotional": f"🎯 جربت {first_line}؟\n\nوالله ما تندم! عندنا أحسن تجربة وبأسعار تناسب الجميع 🔥\n\nتعال وشوف الفرق بنفسك — الجودة تتكلم عن نفسها 💪",
-        "engagement": f"سؤال لكم! 🤔\n\nإيش أكثر شي تبون تشوفونه عندنا في {first_line}؟\n\nشاركونا رأيكم في التعليقات ⬇️",
-        "educational": f"💡 هل تعلم؟\n\n{first_line} ممكن يغير طريقة تفكيرك!\n\nشاركها مع أصحابك اللي يحتاجون هذي المعلومة 🙌",
-        "story": f"⭐ قصة نجاح حقيقية\n\nعميلنا كان يبحث عن {first_line}...\nاليوم هو من أكثر زبائننا رضا!\n\nأنت التالي 🎯",
-        "seasonal": f"🌙 في هذا الموسم المبارك\n\n{first_line} معكم بأجمل العروض وأحسن الأسعار!\n\nاستغل الفرصة قبل ما تنتهي ⏰",
-    }
-
-    text = templates.get(post_type, templates["promotional"])
-
-    platform_hashtags = {
-        "instagram": ["#السعودية", "#الرياض", "#تسويق", "#عروض", "#Saudi", "#Riyadh", "#KSA", "#SaudiArabia"],
-        "twitter":   ["#السعودية", "#KSA", "#Riyadh"],
-        "tiktok":    ["#السعودية", "#تيك_توك", "#fyp", "#viral", "#KSA", "#SaudiTikTok"],
-        "snapchat":  ["#السعودية", "#snap"],
-    }
-
-    hashtags = platform_hashtags.get(platform, platform_hashtags["instagram"])
-    if custom_hashtags:
-        extra = [t.strip() for t in custom_hashtags.split() if t.strip()]
-        hashtags = extra + hashtags
-
-    emojis_map = {
-        "promotional": ["🔥", "💥", "🎯"],
-        "engagement":  ["💬", "❓", "👇"],
-        "educational": ["💡", "📚", "✅"],
-        "story":       ["⭐", "🙌", "💪"],
-        "seasonal":    ["🌙", "🎉", "✨"],
-    }
-
-    return {
-        "text": text,
-        "hashtags": hashtags[:8],
-        "emojis": emojis_map.get(post_type, ["✨", "🔥", "💪"]),
-    }
-
-
-# ---- OPENAI GENERATOR ----
-def generate_with_openai(payload: dict) -> dict:
-    api_key = os.environ.get("OPENAI_API_KEY", "")
-    if not api_key or not openai:
-        return generate_mock(payload)
-
-    client = openai.OpenAI(api_key=api_key)
-    prompt = build_prompt(payload)
-
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.85,
-        max_tokens=600,
-        response_format={"type": "json_object"},
-    )
-
-    content = response.choices[0].message.content
-    result = json.loads(content)
-
-    # Validate structure
-    if not isinstance(result.get("text"), str):
-        raise ValueError("Invalid response structure")
-
-    return result
-
-
-# ---- VERCEL HANDLER ----
 class handler(BaseHTTPRequestHandler):
+
     def do_OPTIONS(self):
         self.send_response(200)
-        self._cors_headers()
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
 
-    def do_POST(self):
-        try:
-            length = int(self.headers.get("Content-Length", 0))
-            body = self.rfile.read(length)
-            payload = json.loads(body)
-        except Exception:
-            self._error(400, "Invalid request body")
-            return
-
-        # Validate required fields
-        if not payload.get("description", "").strip():
-            self._error(400, "description is required")
-            return
-
-        try:
-            result = generate_with_openai(payload)
-            self._json(200, result)
-        except Exception as e:
-            print(f"Generation error: {e}")
-            # Fallback to mock
-            try:
-                result = generate_mock(payload)
-                self._json(200, result)
-            except Exception as e2:
-                self._error(500, str(e2))
-
-    def _cors_headers(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-
-    def _json(self, code: int, data: dict):
-        body = json.dumps(data, ensure_ascii=False).encode("utf-8")
-        self.send_response(code)
-        self._cors_headers()
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
+    def do_GET(self):
+        # Stats endpoint — returns static data (stateless serverless)
+        result = {"total_generations": 0, "today": 0}
+        body = json.dumps(result).encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
 
-    def _error(self, code: int, msg: str):
-        self._json(code, {"error": msg})
+    def do_POST(self):
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            body_raw = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            body = json.loads(body_raw)
+        except Exception as e:
+            self._send_json(400, {"error": f"Invalid request: {str(e)}"})
+            return
+
+        business_name = body.get("business_name", "").strip() or "My Business"
+        business_type = body.get("business_type", "general")
+        target_audience = body.get("target_audience", "").strip()
+        platforms = body.get("platforms", ["instagram"])
+        tone = body.get("tone", "friendly")
+        language = body.get("language", "both")
+        num_posts = min(max(int(body.get("num_posts", 7)), 1), 30)
+        mode = body.get("mode", "demo")
+
+        # DEMO MODE
+        if mode == "demo":
+            posts = get_demo_posts(business_name, language, platforms)
+            self._send_json(200, {"posts": posts, "mode": "demo"})
+            return
+
+        # AI MODE — try Gemini, fallback to templates
+        used_mode = "ai"
+        try:
+            posts = generate_with_gemini(
+                business_name, business_type, target_audience,
+                platforms, tone, language, num_posts
+            )
+        except Exception:
+            posts = generate_with_templates(
+                business_name, business_type, platforms, tone, language, num_posts
+            )
+            used_mode = "template"
+
+        self._send_json(200, {"posts": posts, "mode": used_mode})
+
+    def _send_json(self, status_code, data):
+        body = json.dumps(data, ensure_ascii=False).encode('utf-8')
+        self.send_response(status_code)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+
+def generate_with_gemini(name, btype, audience, platforms, tone, language, num_posts):
+    """Generate posts using Google Gemini API."""
+
+    tone_map = {
+        "professional": ("احترافي ومصقول", "professional and polished"),
+        "friendly": ("ودّي وقريب", "warm and approachable"),
+        "formal": ("رسمي", "formal and corporate"),
+        "inspirational": ("ملهم وتحفيزي", "inspirational and motivational"),
+        "playful": ("مرح وخفيف", "fun and lighthearted")
+    }
+
+    btype_map = {
+        "restaurant": "مطعم / Restaurant",
+        "online_store": "متجر إلكتروني / Online Store",
+        "real_estate": "عقارات / Real Estate",
+        "beauty": "تجميل / Beauty & Skincare",
+        "fashion": "أزياء / Fashion",
+        "technology": "تقنية / Technology",
+        "education": "تعليم / Education",
+        "health": "صحة / Health",
+        "tourism": "سياحة / Tourism",
+        "general": "عام / General Business"
+    }
+
+    tone_ar, tone_en = tone_map.get(tone, ("ودّي", "friendly"))
+    btype_label = btype_map.get(btype, btype)
+    platform_str = ", ".join(platforms)
+
+    lang_instruction = {
+        "both": 'For EACH post provide BOTH "text_ar" (Gulf Saudi dialect, NOT formal MSA) and "text_en" (professional English). Also provide "hashtags_ar" and "hashtags_en".',
+        "ar": 'Write all posts in Arabic ONLY using Gulf/Saudi dialect. Provide "text_ar" and "hashtags_ar" only. Do NOT include English fields.',
+        "en": 'Write all posts in English ONLY. Provide "text_en" and "hashtags_en" only. Do NOT include Arabic fields.'
+    }.get(language, 'Provide both Arabic and English.')
+
+    prompt = f"""You are an expert Saudi social media content strategist. Generate exactly {num_posts} social media posts.
+
+BUSINESS: {name}
+TYPE: {btype_label}
+AUDIENCE: {audience or 'General Saudi audience'}
+PLATFORMS: {platform_str}
+TONE: {tone_ar} / {tone_en}
+
+{lang_instruction}
+
+RULES:
+- Each post MUST be unique, creative, and engaging
+- 3-5 relevant hashtags per post — use Saudi-specific tags (#السعودية #الرياض #جدة #رؤية_2030 etc.)
+- Mix content types: promotional, educational, behind-the-scenes, testimonial-style, engagement questions, seasonal content
+- Platform-appropriate: short for X/Twitter (< 280 chars), descriptive for Instagram, professional for LinkedIn, casual for Snapchat/TikTok
+- Reference Saudi culture: Ramadan, Eid, National Day, Founding Day, Riyadh Season, coffee culture
+- NO emojis — clean text only
+- Distribute posts evenly across platforms
+- Arabic MUST be Gulf/Saudi dialect — natural and conversational, NOT formal MSA
+
+Return ONLY valid JSON:
+{{"posts":[{{"day":1,"platform":"instagram","text_ar":"...","text_en":"...","hashtags_ar":["#..."],"hashtags_en":["#..."]}}]}}
+
+Generate exactly {num_posts} posts, days 1 through {num_posts}."""
+
+    request_body = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.95,
+            "topP": 0.95,
+            "maxOutputTokens": 8192,
+            "responseMimeType": "application/json"
+        }
+    }
+
+    url = f"{GEMINI_API_URL}?key={GEMINI_API_KEY}"
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(request_body).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST"
+    )
+
+    with urllib.request.urlopen(req, timeout=55) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+
+    text = result["candidates"][0]["content"]["parts"][0]["text"]
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+    if text.endswith("```"):
+        text = text[:-3]
+    text = text.strip()
+
+    parsed = json.loads(text)
+    posts = parsed.get("posts", parsed) if isinstance(parsed, dict) else parsed
+    return posts
+
+
+def get_demo_posts(name, language, platforms):
+    """Hardcoded demo posts."""
+    name = name or "نشاطك التجاري"
+    p1 = platforms[0] if platforms else "instagram"
+    p2 = platforms[1] if len(platforms) > 1 else p1
+    p3 = platforms[2] if len(platforms) > 2 else p1
+
+    posts = [
+        {
+            "day": 1, "platform": p1,
+            "text_ar": f"في {name}، نؤمن بأن التميز مو مجرد كلام — هو أسلوب حياة. كل يوم نسعى نقدم لكم الأفضل لأنكم تستاهلون. جربونا وشوفوا الفرق بأنفسكم.",
+            "text_en": f"At {name}, we believe excellence isn't just a word — it's how we operate. Every day we push to bring you the best, because you deserve nothing less. Come see the difference for yourself.",
+            "hashtags_ar": ["#السعودية", "#تميز", "#جودة", "#الرياض", "#رؤية_2030"],
+            "hashtags_en": ["#SaudiArabia", "#Excellence", "#Quality", "#Riyadh", "#Vision2030"]
+        },
+        {
+            "day": 2, "platform": p2,
+            "text_ar": f"عملاؤنا الكرام هم سر نجاحنا. شكراً لثقتكم في {name} — نعدكم إننا دايماً نطور ونتحسن عشان نكون عند حسن ظنكم.",
+            "text_en": f"Our valued customers are the secret to our success. Thank you for trusting {name} — we promise to continuously improve and exceed your expectations.",
+            "hashtags_ar": ["#عملاء", "#ثقة", "#نجاح", "#الرياض", "#خدمات"],
+            "hashtags_en": ["#CustomerFirst", "#Trust", "#Success", "#Riyadh", "#Services"]
+        },
+        {
+            "day": 3, "platform": p3,
+            "text_ar": f"تبي جودة واحترافية؟ {name} وجهتك الأولى. تعال واكتشف ليش عملاؤنا يرجعون لنا كل مرة.",
+            "text_en": f"Looking for quality and professionalism? {name} is your go-to. Come discover why our clients always come back.",
+            "hashtags_ar": ["#جودة", "#احترافية", "#السعودية", "#تسوق", "#اعمال"],
+            "hashtags_en": ["#Quality", "#Professional", "#SaudiArabia", "#Business", "#Growth"]
+        }
+    ]
+
+    if language == "ar":
+        for p in posts:
+            p.pop("text_en", None)
+            p.pop("hashtags_en", None)
+    elif language == "en":
+        for p in posts:
+            p.pop("text_ar", None)
+            p.pop("hashtags_ar", None)
+
+    return posts
+
+
+def generate_with_templates(name, btype, platforms, tone, language, num_posts):
+    """Fallback when Gemini API is unavailable."""
+    ar_templates = [
+        "في {name}، نؤمن بأن التميز ليس خياراً بل أسلوب حياة. نقدم لكم أفضل الخدمات والمنتجات في مجالنا.",
+        "اكتشفوا الفرق مع {name}. جودة عالية وخدمة احترافية تليق بكم وبتطلعاتكم.",
+        "لأنكم تستاهلون الأفضل — {name} هنا عشان نحقق لكم تجربة مميزة ما تنسونها.",
+        "{name} يقدم لكم حلول مبتكرة تناسب احتياجاتكم. تواصلوا معنا اليوم واكتشفوا المزيد.",
+        "ثقة عملائنا هي أكبر إنجازاتنا. شكراً لكل من اختار {name} — نعدكم بالأفضل دائماً.",
+        "هل تبحثون عن الجودة والاحترافية؟ {name} وجهتكم الأولى. زورونا وشوفوا بأنفسكم.",
+        "مع {name}، كل يوم هو فرصة جديدة للتميز. انضموا لعائلتنا المتنامية واستمتعوا بالفرق.",
+        "نفخر في {name} بتقديم خدمات تتجاوز توقعاتكم. جربونا وشاركونا رأيكم.",
+    ]
+    en_templates = [
+        "At {name}, we believe excellence isn't optional — it's a way of life. We bring you the best services in our field.",
+        "Discover the difference with {name}. Premium quality and professional service that matches your ambitions.",
+        "Because you deserve the best — {name} is here to deliver an unforgettable experience.",
+        "{name} offers innovative solutions tailored to your needs. Contact us today and learn more.",
+        "Our clients' trust is our greatest achievement. Thank you for choosing {name} — we promise the best, always.",
+        "Looking for quality and professionalism? {name} is your go-to destination. Visit us and see for yourself.",
+        "With {name}, every day is a new opportunity to excel. Join our growing family and experience the difference.",
+        "At {name}, we pride ourselves on exceeding expectations. Try us and share your experience.",
+    ]
+    ar_tags = ["#السعودية", "#الرياض", "#جدة", "#رؤية_2030", "#اعمال", "#ريادة_اعمال", "#نجاح", "#تميز", "#خدمات", "#جودة"]
+    en_tags = ["#SaudiArabia", "#Riyadh", "#Jeddah", "#Vision2030", "#Business", "#Entrepreneurship", "#Success", "#Quality", "#Services", "#Growth"]
+
+    posts = []
+    for i in range(num_posts):
+        post = {"day": i + 1, "platform": platforms[i % len(platforms)]}
+        if language in ("ar", "both"):
+            post["text_ar"] = ar_templates[i % len(ar_templates)].replace("{name}", name)
+            post["hashtags_ar"] = random.sample(ar_tags, 5)
+        if language in ("en", "both"):
+            post["text_en"] = en_templates[i % len(en_templates)].replace("{name}", name)
+            post["hashtags_en"] = random.sample(en_tags, 5)
+        posts.append(post)
+    return posts

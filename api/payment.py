@@ -1,156 +1,159 @@
 #!/usr/bin/env python3
 """
 Postir — Airwallex Payment Integration
-Creates Payment Intent via Airwallex API for SAR subscriptions.
-
-Deploy on Vercel as a Python serverless function.
+Creates PaymentIntents and returns checkout data for the Airwallex Hosted Payment Page.
+Vercel serverless function (BaseHTTPRequestHandler format).
 """
-
 import json
-import os
+import urllib.request
+import urllib.error
 import uuid
+import time
 from http.server import BaseHTTPRequestHandler
 
-try:
-    import urllib.request
-except ImportError:
-    pass
+# ===== AIRWALLEX CONFIG =====
+AIRWALLEX_BASE_URL = "https://api.airwallex.com"
+AIRWALLEX_CLIENT_ID = "VdkldjCkQJqz4P7-pCQ85g"
+AIRWALLEX_API_KEY = "32ec09e0cc3dee7e7994e09152785ce3db74404d7053d0523c3af042ff9a1ba3df6ebea5d9a226d761990b6da1b448ed"
+
+# Cache token in memory (expires after ~30 min)
+_token_cache = {"token": None, "expires_at": 0}
 
 
-# ---- CONFIG ----
-AIRWALLEX_BASE = "https://api.airwallex.com"
-AIRWALLEX_DEMO = "https://demo-api.airwallex.com"  # sandbox
+def get_auth_token():
+    """Authenticate with Airwallex and get access token."""
+    now = time.time()
+    if _token_cache["token"] and _token_cache["expires_at"] > now + 60:
+        return _token_cache["token"]
 
-
-def get_airwallex_token() -> str:
-    """Authenticate with Airwallex and get bearer token."""
-    client_id = os.environ.get("AIRWALLEX_CLIENT_ID", "")
-    api_key   = os.environ.get("AIRWALLEX_API_KEY", "")
-
-    if not client_id or not api_key:
-        raise ValueError("Missing Airwallex credentials")
-
-    base = AIRWALLEX_DEMO if os.environ.get("AIRWALLEX_SANDBOX") else AIRWALLEX_BASE
-    url  = f"{base}/api/v1/authentication/login"
-
+    url = f"{AIRWALLEX_BASE_URL}/api/v1/authentication/login"
     req = urllib.request.Request(
         url,
+        method="POST",
         headers={
-            "x-client-id":  client_id,
-            "x-api-key":    api_key,
             "Content-Type": "application/json",
+            "x-api-key": AIRWALLEX_API_KEY,
+            "x-client-id": AIRWALLEX_CLIENT_ID,
         },
-        method="POST",
-        data=b"{}",
     )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
 
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        data = json.loads(resp.read())
-        return data["token"]
+    _token_cache["token"] = data["token"]
+    # Parse expiry — it's an ISO string but we just set 25 min from now for safety
+    _token_cache["expires_at"] = now + 25 * 60
+    return data["token"]
 
 
-def create_payment_intent(payload: dict) -> dict:
-    """Create a Payment Intent and return the checkout URL."""
-    token    = get_airwallex_token()
-    plan     = payload.get("plan", "pro")
-    price    = float(payload.get("price", 49))
-    email    = payload.get("email", "")
-    name     = payload.get("name", "")
-    currency = payload.get("currency", "SAR")
+def create_payment_intent(amount, currency, description, merchant_order_id, return_url):
+    """Create an Airwallex PaymentIntent."""
+    token = get_auth_token()
+    url = f"{AIRWALLEX_BASE_URL}/api/v1/pa/payment_intents/create"
 
-    base     = AIRWALLEX_DEMO if os.environ.get("AIRWALLEX_SANDBOX") else AIRWALLEX_BASE
-    url      = f"{base}/api/v1/pa/payment_intents/create"
-
-    intent_body = json.dumps({
-        "request_id":       str(uuid.uuid4()),
-        "amount":           price,
-        "currency":         currency,
-        "merchant_order_id": f"postir-{plan}-{uuid.uuid4().hex[:8]}",
-        "descriptor":       f"Postir {plan.capitalize()} Plan",
+    payload = {
+        "request_id": str(uuid.uuid4()),
+        "amount": amount,
+        "currency": currency,
+        "merchant_order_id": merchant_order_id,
+        "descriptor": description,
+        "return_url": return_url,
         "metadata": {
-            "plan":  plan,
-            "email": email,
-            "name":  name,
+            "product": "postir",
+            "plan": description,
         },
-        "return_url": os.environ.get("RETURN_URL", "https://postir.vercel.app/?payment=success"),
-    }).encode("utf-8")
+    }
 
     req = urllib.request.Request(
         url,
+        data=json.dumps(payload).encode("utf-8"),
         headers={
+            "Content-Type": "application/json",
             "Authorization": f"Bearer {token}",
-            "Content-Type":  "application/json",
         },
         method="POST",
-        data=intent_body,
     )
 
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        intent = json.loads(resp.read())
-
-    # Build hosted checkout URL
-    intent_id     = intent["id"]
-    client_secret = intent["client_secret"]
-    checkout_url  = (
-        f"https://checkout.airwallex.com/?intent_id={intent_id}"
-        f"&client_secret={client_secret}"
-        f"&currency={currency}"
-    )
-
-    return {"checkout_url": checkout_url, "intent_id": intent_id}
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        return json.loads(resp.read().decode("utf-8"))
 
 
-# ---- MOCK (when no API keys) ----
-def mock_payment(payload: dict) -> dict:
-    """Simulate successful payment for dev/demo."""
-    return {"success": True, "message": "Demo mode — no real charge"}
-
-
-# ---- VERCEL HANDLER ----
 class handler(BaseHTTPRequestHandler):
+
     def do_OPTIONS(self):
         self.send_response(200)
-        self._cors_headers()
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
 
     def do_POST(self):
         try:
-            length = int(self.headers.get("Content-Length", 0))
-            body   = self.rfile.read(length)
-            payload = json.loads(body)
-        except Exception:
-            self._error(400, "Invalid request body")
+            content_length = int(self.headers.get('Content-Length', 0))
+            body_raw = self.rfile.read(content_length) if content_length > 0 else b'{}'
+            body = json.loads(body_raw)
+        except Exception as e:
+            self._send_json(400, {"error": f"Invalid request: {str(e)}"})
             return
 
-        # Validate
-        if not payload.get("email") or not payload.get("name"):
-            self._error(400, "email and name are required")
+        plan = body.get("plan", "ppu")  # "ppu" or "pro"
+        return_url = body.get("return_url", "")
+
+        # Define plans — amounts in SAR
+        plans = {
+            "ppu": {
+                "amount": 10.00,
+                "currency": "SAR",
+                "description": "Postir - Pay Per Use (10 Posts)",
+                "order_prefix": "PPU",
+            },
+            "pro": {
+                "amount": 99.00,
+                "currency": "SAR",
+                "description": "Postir - Monthly Pro (Unlimited)",
+                "order_prefix": "PRO",
+            },
+        }
+
+        if plan not in plans:
+            self._send_json(400, {"error": f"Unknown plan: {plan}. Use 'ppu' or 'pro'."})
             return
+
+        plan_data = plans[plan]
+        order_id = f"{plan_data['order_prefix']}-{int(time.time())}-{uuid.uuid4().hex[:6]}"
 
         try:
-            result = create_payment_intent(payload)
-            self._json(200, result)
-        except ValueError:
-            # No API keys — use mock
-            result = mock_payment(payload)
-            self._json(200, result)
+            intent = create_payment_intent(
+                amount=plan_data["amount"],
+                currency=plan_data["currency"],
+                description=plan_data["description"],
+                merchant_order_id=order_id,
+                return_url=return_url or "https://postir.co/#payment-success",
+            )
+
+            # Return what the frontend needs for Airwallex JS SDK
+            result = {
+                "intent_id": intent["id"],
+                "client_secret": intent["client_secret"],
+                "currency": plan_data["currency"],
+                "amount": plan_data["amount"],
+                "order_id": order_id,
+                "plan": plan,
+            }
+
+            self._send_json(200, result)
+
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode("utf-8") if e.fp else ""
+            self._send_json(e.code, {"error": f"Payment service error: {error_body}"})
+
         except Exception as e:
-            print(f"Payment error: {e}")
-            self._error(500, f"Payment processing failed: {str(e)}")
+            self._send_json(500, {"error": f"Server error: {str(e)}"})
 
-    def _cors_headers(self):
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-
-    def _json(self, code: int, data: dict):
-        body = json.dumps(data, ensure_ascii=False).encode("utf-8")
-        self.send_response(code)
-        self._cors_headers()
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
+    def _send_json(self, status_code, data):
+        body = json.dumps(data, ensure_ascii=False).encode('utf-8')
+        self.send_response(status_code)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
-
-    def _error(self, code: int, msg: str):
-        self._json(code, {"error": msg})
